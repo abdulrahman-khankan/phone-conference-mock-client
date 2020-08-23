@@ -11,3 +11,9 @@ export enum ParticipantCallStatus {
   RemoteBusy = 'Remote busy',
   RemoteRejected = 'Remote rejected',
 }
+
+export interface IParticipant {
+  selfStatus: ParticipantSelfStatus;
+  callStatus?: ParticipantCallStatus;
+  incomingMessage: string;
+}

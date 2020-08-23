@@ -1,1 +1,1 @@
-export { ConnectionManager } from './MainPage';
+export { MainPage } from './MainPage';
