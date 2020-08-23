@@ -33,6 +33,12 @@ const Participant = React.memo((props: ParticipantProps) => {
 
   const messageChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => setMessage(event.target.value);
 
+  const keyPressHandler = (event: React.KeyboardEvent<HTMLInputElement>, callback: Function) => {
+    if (event.key === 'Enter') {
+      callback();
+    }
+  };
+
   const sendMessageHandler = () => {
     setMessage('');
     send(id, message);
@@ -64,6 +70,7 @@ const Participant = React.memo((props: ParticipantProps) => {
           value={targetParticipandId}
           disabled={!isIdle}
           onChange={targetParticipantChangeHandler}
+          onKeyPress={(e) => keyPressHandler(e, makeCallHandler)}
         />
       )}
       {isTalking ? (
@@ -100,7 +107,13 @@ const Participant = React.memo((props: ParticipantProps) => {
                 </div>
               )}
             </div>
-            <input type="text" placeholder="Write your message here" value={message} onChange={messageChangeHandler} />
+            <input
+              type="text"
+              placeholder="Write your message here"
+              value={message}
+              onChange={messageChangeHandler}
+              onKeyPress={(e) => keyPressHandler(e, sendMessageHandler)}
+            />
             <button disabled={!message} onClick={sendMessageHandler}>
               Send
             </button>
