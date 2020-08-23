@@ -65,7 +65,10 @@ const Participant = React.memo((props: ParticipantProps) => {
   return (
     <div>
       <h1>Participant: {id}</h1>
-      <h2>Status: {selfStatus}</h2>
+      <h2>
+        Status: {selfStatus}
+        {isRinning ? ` (${secondParticipantId})` : ''}
+      </h2>
       {isIdle && (
         <input
           type="text"
