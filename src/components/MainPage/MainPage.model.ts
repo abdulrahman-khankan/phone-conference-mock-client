@@ -1,14 +1,24 @@
-import { IParticipant, ParticipantSelfStatus } from '../shared.model';
+import { IParticipant, ParticipantSelfStatus, ParticipantCallStatus } from '../shared.model';
 
 const PARTICIPANTS_COUNT = 4;
 
-export interface IState {
-  participants: IParticipants;
+interface IParticipants {
+  [id: string]: IParticipant;
 }
 
-export interface IParticipants {
-  [id: string]: IParticipant & { secondParticipantId: string };
+export interface IParticipantUpdates {
+  selfStatus?: ParticipantSelfStatus;
+  callStatus?: ParticipantCallStatus;
+  incomingMessage?: string;
+  secondParticipantId?: string;
 }
+
+export const getDefaultParticipant = (): IParticipant => ({
+  selfStatus: ParticipantSelfStatus.Idle,
+  callStatus: undefined,
+  secondParticipantId: '',
+  incomingMessage: '',
+});
 
 export function initializeParticipants(): IParticipants {
   const participants: IParticipants = {};
@@ -21,11 +31,7 @@ export function initializeParticipants(): IParticipants {
       participantId = getRandomId();
     }
 
-    participants[participantId] = {
-      selfStatus: ParticipantSelfStatus.Idle,
-      secondParticipantId: '',
-      incomingMessage: '',
-    };
+    participants[participantId] = getDefaultParticipant();
   }
 
   return participants;

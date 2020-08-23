@@ -1,141 +1,133 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Participant } from '../Participant';
-import { IState, initializeParticipants } from './MainPage.model';
+import { initializeParticipants, IParticipantUpdates, getDefaultParticipant } from './MainPage.model';
 import { ParticipantSelfStatus, ParticipantCallStatus } from '../shared.model';
 
-export class MainPage extends React.Component<any, IState> {
-  constructor(props: any) {
-    super(props);
-    this.state = {
-      participants: initializeParticipants(),
-    };
-  }
+export function MainPage() {
+  const initialParticipantsState = initializeParticipants();
+  const [participants, setParticipants] = useState(initialParticipantsState);
 
-  updateParticipantSelfStatus(participantId: string, newStatus: ParticipantSelfStatus): void {
-    const newState = { ...this.state };
-    newState.participants[participantId].selfStatus = newStatus;
+  // Currently we only have updates on maximum two participants as per spec (no group calls).
+  // So there's no need to handle more.
+  const updateParticipants = (participantChanges: { id: string; changes: IParticipantUpdates }[]): void => {
+    const newState = { ...participants };
 
-    this.setState(newState);
-  }
+    participantChanges.forEach((participant) => {
+      const oldData = newState[participant.id];
+      newState[participant.id] = { ...oldData, ...participant.changes };
+    });
 
-  updateParticipantCallStatus(participantId: string, newStatus: ParticipantCallStatus): void {
-    const newState = { ...this.state };
-    newState.participants[participantId].callStatus = newStatus;
+    setParticipants(newState);
+  };
 
-    this.setState(newState);
-  }
-
-  makeCall = (sourceId: string, targetId: string): void => {
-    const target = this.state.participants[targetId];
+  const makeCall = (sourceId: string, targetId: string): void => {
+    const target = participants[targetId];
 
     if (!target) {
-      return this.updateParticipantCallStatus(sourceId, ParticipantCallStatus.RemoteUnknown);
+      return updateParticipants([{ id: sourceId, changes: { callStatus: ParticipantCallStatus.RemoteUnknown } }]);
     }
 
     const destinationStatus = target.selfStatus;
     if (destinationStatus !== ParticipantSelfStatus.Idle) {
-      this.updateParticipantCallStatus(sourceId, ParticipantCallStatus.RemoteBusy);
+      _signalBusy(sourceId);
     } else {
-      this.placeCall(sourceId, targetId);
+      _placeCall(sourceId, targetId);
     }
   };
 
-  private placeCall(sourceId: string, targetId: string): void {
-    const newState = { ...this.state };
-
-    newState.participants[sourceId].selfStatus = ParticipantSelfStatus.PlacingCall;
-    newState.participants[targetId].selfStatus = ParticipantSelfStatus.Ringing;
-
-    newState.participants[sourceId].callStatus = ParticipantCallStatus.RemoteRinging;
-
-    newState.participants[sourceId].secondParticipantId = targetId;
-    newState.participants[targetId].secondParticipantId = sourceId;
-
-    this.setState(newState);
-  }
-
-  acceptCall = (participantId: string): void => {
-    const newState = { ...this.state };
-    const { secondParticipantId } = this.state.participants[participantId];
-
-    newState.participants[participantId].selfStatus = ParticipantSelfStatus.Talking;
-    newState.participants[secondParticipantId].selfStatus = ParticipantSelfStatus.Talking;
-
-    newState.participants[participantId].callStatus = undefined;
-    newState.participants[secondParticipantId].callStatus = undefined;
-
-    this.setState(newState);
+  const _signalBusy = (sourceId: string): void => {
+    updateParticipants([{ id: sourceId, changes: { callStatus: ParticipantCallStatus.RemoteBusy } }]);
   };
 
-  rejectCall = (participantId: string): void => {
-    const newState = { ...this.state };
-    const { secondParticipantId } = this.state.participants[participantId];
-
-    newState.participants[participantId].selfStatus = ParticipantSelfStatus.Idle;
-    newState.participants[secondParticipantId].selfStatus = ParticipantSelfStatus.Idle;
-
-    newState.participants[participantId].callStatus = undefined;
-    newState.participants[secondParticipantId].callStatus = ParticipantCallStatus.RemoteRejected;
-
-    newState.participants[participantId].secondParticipantId = '';
-    newState.participants[secondParticipantId].secondParticipantId = '';
-
-    this.setState(newState);
+  const _placeCall = (sourceId: string, targetId: string): void => {
+    updateParticipants([
+      {
+        id: sourceId,
+        changes: {
+          selfStatus: ParticipantSelfStatus.PlacingCall,
+          callStatus: ParticipantCallStatus.RemoteRinging,
+          secondParticipantId: targetId,
+        },
+      },
+      {
+        id: targetId,
+        changes: { selfStatus: ParticipantSelfStatus.Ringing, secondParticipantId: sourceId },
+      },
+    ]);
   };
 
-  send = (participantId: string, message: string): void => {
-    const newState = { ...this.state };
-    const { secondParticipantId } = this.state.participants[participantId];
+  const acceptCall = (participantId: string): void => {
+    const { secondParticipantId } = participants[participantId];
 
-    newState.participants[secondParticipantId].incomingMessage = message;
-
-    this.setState(newState);
+    updateParticipants([
+      {
+        id: participantId,
+        changes: { selfStatus: ParticipantSelfStatus.Talking, callStatus: undefined },
+      },
+      {
+        id: secondParticipantId,
+        changes: { selfStatus: ParticipantSelfStatus.Talking, callStatus: undefined },
+      },
+    ]);
   };
 
-  endCall = (participantId: string): void => {
-    const newState = { ...this.state };
-    const { secondParticipantId } = this.state.participants[participantId];
+  const rejectCall = (participantId: string): void => {
+    const { secondParticipantId } = participants[participantId];
 
-    newState.participants[participantId].selfStatus = ParticipantSelfStatus.Idle;
-    newState.participants[secondParticipantId].selfStatus = ParticipantSelfStatus.Idle;
-
-    newState.participants[participantId].callStatus = undefined;
-    newState.participants[secondParticipantId].callStatus = undefined;
-
-    newState.participants[participantId].secondParticipantId = '';
-    newState.participants[secondParticipantId].secondParticipantId = '';
-
-    newState.participants[secondParticipantId].incomingMessage = '';
-    newState.participants[secondParticipantId].incomingMessage = '';
-
-    this.setState(newState);
+    updateParticipants([
+      {
+        id: participantId,
+        changes: { selfStatus: ParticipantSelfStatus.Idle, callStatus: undefined, secondParticipantId: '' },
+      },
+      {
+        id: secondParticipantId,
+        changes: {
+          selfStatus: ParticipantSelfStatus.Idle,
+          callStatus: ParticipantCallStatus.RemoteRejected,
+          secondParticipantId: '',
+        },
+      },
+    ]);
   };
 
-  render() {
-    const { participants } = this.state;
-    const knownParticipants = Object.keys(participants);
-    return (
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100vh' }}>
-        {knownParticipants.map((id, key) => {
-          const self = participants[id];
-          return (
-            <Participant
-              key={key}
-              id={id}
-              selfStatus={self.selfStatus}
-              callStatus={self.callStatus}
-              incomingMessage={self.incomingMessage}
-              secondParticipantId={self.secondParticipantId}
-              acceptCall={this.acceptCall}
-              endCall={this.endCall}
-              makeCall={this.makeCall}
-              rejectCall={this.rejectCall}
-              send={this.send}
-            />
-          );
-        })}
-      </div>
-    );
-  }
+  const send = (participantId: string, message: string): void => {
+    const { secondParticipantId } = participants[participantId];
+
+    updateParticipants([{ id: secondParticipantId, changes: { incomingMessage: message } }]);
+  };
+
+  const endCall = (participantId: string): void => {
+    const { secondParticipantId } = participants[participantId];
+
+    updateParticipants([
+      { id: participantId, changes: getDefaultParticipant() },
+      { id: secondParticipantId, changes: getDefaultParticipant() },
+    ]);
+  };
+
+  const knownParticipants = Object.keys(participants);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', height: '100vh' }}>
+      {knownParticipants.map((id, key) => {
+        const self = participants[id];
+        return (
+          <Participant
+            key={key}
+            id={id}
+            selfStatus={self.selfStatus}
+            callStatus={self.callStatus}
+            incomingMessage={self.incomingMessage}
+            secondParticipantId={self.secondParticipantId}
+            acceptCall={acceptCall}
+            endCall={endCall}
+            makeCall={makeCall}
+            rejectCall={rejectCall}
+            send={send}
+          />
+        );
+      })}
+    </div>
+  );
 }
