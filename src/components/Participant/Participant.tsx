@@ -27,7 +27,7 @@ const Participant = React.memo((props: ParticipantProps) => {
     if (isNaN(Number(newValue))) {
       return;
     } else {
-      setTargetParticipandId(event.target.value);
+      setTargetParticipandId(newValue);
     }
   };
 
@@ -94,7 +94,8 @@ const Participant = React.memo((props: ParticipantProps) => {
           <>
             <div className="section-height-placeholder">
               {incomingMessage && (
-                <div>
+                /* Add key to trigger a DOM change to run the animation */
+                <div className="message-container" key={incomingMessage}>
                   {secondParticipantId} says: {incomingMessage}
                 </div>
               )}
