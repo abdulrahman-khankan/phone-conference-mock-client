@@ -14,7 +14,12 @@ export function initializeParticipants(): IParticipants {
   const participants: IParticipants = {};
 
   for (let i = 0; i < PARTICIPANTS_COUNT; i++) {
-    const participantId = getRandomId();
+    let participantId = getRandomId();
+
+    // One time re-randomization should be enough in reality. Otherwise we loop few times until we get a new unique id.
+    if (participants[participantId]) {
+      participantId = getRandomId();
+    }
 
     participants[participantId] = {
       selfStatus: ParticipantSelfStatus.Idle,

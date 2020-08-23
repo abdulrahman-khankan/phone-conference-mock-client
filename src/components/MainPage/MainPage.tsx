@@ -126,6 +126,7 @@ export class MainPage extends React.Component<any, IState> {
               selfStatus={self.selfStatus}
               callStatus={self.callStatus}
               incomingMessage={self.incomingMessage}
+              secondParticipantId={self.secondParticipantId}
               acceptCall={this.acceptCall}
               endCall={this.endCall}
               makeCall={this.makeCall}

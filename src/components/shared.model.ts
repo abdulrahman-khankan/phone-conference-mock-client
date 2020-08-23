@@ -16,4 +16,5 @@ export interface IParticipant {
   selfStatus: ParticipantSelfStatus;
   callStatus?: ParticipantCallStatus;
   incomingMessage: string;
+  secondParticipantId: string;
 }

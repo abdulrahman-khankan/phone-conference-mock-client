@@ -4,11 +4,24 @@ import { ParticipantSelfStatus, ParticipantCallStatus } from '../shared.model';
 import { ParticipantProps } from './Participant.model';
 import './Participant.css';
 
-function Participant(props: ParticipantProps) {
+const Participant = React.memo((props: ParticipantProps) => {
+  const {
+    id,
+    selfStatus,
+    callStatus,
+    secondParticipantId,
+    incomingMessage,
+    endCall,
+    makeCall,
+    send,
+    acceptCall,
+    rejectCall,
+  } = props;
+
   const [message, setMessage] = useState('');
   const [targetParticipandId, setTargetParticipandId] = useState('');
 
-  const handleTargetParticipantChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const targetParticipantChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.value;
 
     if (isNaN(Number(newValue))) {
@@ -18,11 +31,21 @@ function Participant(props: ParticipantProps) {
     }
   };
 
-  const handleMessageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setMessage(event.target.value);
+  const messageChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => setMessage(event.target.value);
+
+  const sendMessageHandler = () => {
+    setMessage('');
+    send(id, message);
+  };
+  const makeCallHandler = () => makeCall(id, targetParticipandId);
+  const acceptCallHandler = () => acceptCall(id);
+  const rejectCallHandler = () => rejectCall(id);
+  const endCallHandler = () => {
+    endCall(id);
+    setMessage('');
+    setTargetParticipandId('');
   };
 
-  const { id, callStatus, incomingMessage, selfStatus, endCall, makeCall, send, acceptCall, rejectCall } = props;
   const isIdle = selfStatus === ParticipantSelfStatus.Idle;
   const isRinning = selfStatus === ParticipantSelfStatus.Ringing;
   const isTalking = selfStatus === ParticipantSelfStatus.Talking;
@@ -31,37 +54,49 @@ function Participant(props: ParticipantProps) {
   const showCallStatus = (callStatus && !hasFailed) || (hasFailed && isIdle);
   return (
     <div>
-      <h1>Participant {id}</h1>
+      <h1>Participant: {id}</h1>
       <h2>Status: {selfStatus}</h2>
-      <input
-        type="text"
-        maxLength={3}
-        placeholder="Number to call"
-        value={targetParticipandId}
-        onChange={handleTargetParticipantChange}
-      />
+      {isIdle && (
+        <input
+          type="text"
+          maxLength={3}
+          placeholder="Number to call"
+          value={targetParticipandId}
+          disabled={!isIdle}
+          onChange={targetParticipantChangeHandler}
+        />
+      )}
       {isTalking ? (
-        <button className="reject-button" onClick={() => endCall(id)}>
+        <button className="reject-button" onClick={endCallHandler}>
           End call
         </button>
       ) : (
-        <button
-          disabled={!isIdle || !targetParticipandId || isSelfId}
-          onClick={() => makeCall(id, targetParticipandId)}
-        >
-          Call
-        </button>
+        isIdle && (
+          <button disabled={!isIdle || !targetParticipandId || isSelfId} onClick={makeCallHandler}>
+            Call
+          </button>
+        )
       )}
-      <div className="section-height-placeholder">{showCallStatus && <span>Call Status: {callStatus}</span>}</div>
+      <div className="section-height-placeholder">
+        {showCallStatus && (
+          <span>
+            {targetParticipandId} status: {callStatus}
+          </span>
+        )}
+      </div>
 
       <div className="section-height-placeholder">
         {isTalking && (
           <>
             <div className="section-height-placeholder">
-              {incomingMessage && <div>Received message: {incomingMessage}</div>}
+              {incomingMessage && (
+                <div>
+                  {secondParticipantId} says: {incomingMessage}
+                </div>
+              )}
             </div>
-            <input type="text" placeholder="Write your message here" value={message} onChange={handleMessageChange} />
-            <button disabled={!message} onClick={() => send(id, message)}>
+            <input type="text" placeholder="Write your message here" value={message} onChange={messageChangeHandler} />
+            <button disabled={!message} onClick={sendMessageHandler}>
               Send
             </button>
           </>
@@ -71,10 +106,10 @@ function Participant(props: ParticipantProps) {
       <div>
         {isRinning && (
           <>
-            <button className="accept-button" onClick={() => acceptCall(id)}>
+            <button className="accept-button" onClick={acceptCallHandler}>
               Answer
             </button>
-            <button className="reject-button" onClick={() => rejectCall(id)}>
+            <button className="reject-button" onClick={rejectCallHandler}>
               Decline
             </button>
           </>
@@ -82,6 +117,6 @@ function Participant(props: ParticipantProps) {
       </div>
     </div>
   );
-}
+});
 
 export default Participant;
