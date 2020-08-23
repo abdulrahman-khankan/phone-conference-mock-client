@@ -72,7 +72,11 @@ const Participant = React.memo((props: ParticipantProps) => {
         </button>
       ) : (
         isIdle && (
-          <button disabled={!isIdle || !targetParticipandId || isSelfId} onClick={makeCallHandler}>
+          <button
+            className="accept-button"
+            disabled={!isIdle || !targetParticipandId || isSelfId}
+            onClick={makeCallHandler}
+          >
             Call
           </button>
         )
