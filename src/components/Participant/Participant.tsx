@@ -20,6 +20,7 @@ const Participant = React.memo((props: ParticipantProps) => {
 
   const [message, setMessage] = useState('');
   const [targetParticipandId, setTargetParticipandId] = useState('');
+  const [remoteId, setRemoteId] = useState('');
 
   const targetParticipantChangeHandler = (event: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = event.target.value;
@@ -43,7 +44,10 @@ const Participant = React.memo((props: ParticipantProps) => {
     setMessage('');
     send(id, message);
   };
-  const makeCallHandler = () => makeCall(id, targetParticipandId);
+  const makeCallHandler = () => {
+    makeCall(id, targetParticipandId);
+    setRemoteId(targetParticipandId);
+  };
   const acceptCallHandler = () => acceptCall(id);
   const rejectCallHandler = () => rejectCall(id);
   const endCallHandler = () => {
@@ -91,7 +95,7 @@ const Participant = React.memo((props: ParticipantProps) => {
       <div className="section-height-placeholder">
         {showCallStatus && (
           <span>
-            {targetParticipandId} status: {callStatus}
+            {remoteId} status: {callStatus}
           </span>
         )}
       </div>
